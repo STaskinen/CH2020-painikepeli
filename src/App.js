@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import Button from '@material-ui/core/Button';
 import './App.css';
 
+const xhr = new XMLHttpRequest();
 
 class App extends Component {
   constructor(props) {
@@ -10,51 +11,80 @@ class App extends Component {
     points: 20,
     game: 'Pay to Play',
     counter: 0,
-    message: ''
+    message: '',
+    playerID: '',
+    username: '',
+    loggedIn: false
   }
 }
 
-// Function to handle basic userside logic.
-  playGame = () => {
-    this.setState({
-      counter: this.state.counter + 1,
-      points: this.state.points - 1
-    });
-    if (this.state.points <= 0) {
-      this.setState({
-        points: 20,
-        game: 'Pay to Play',
-        message: 'Welcome back'
-      });
-    } else if (this.state.points-1 === 0) {
-      this.setState({
-        message: 'Game Over',
-        game: 'Continue?'
-      });
+  CUALI = (e) => {
+    e.preventDefault();
+    if (!this.state.username) {
+      this.setStage({message: 'Bad Data. Try Again'})
     } else {
-      if ((this.state.counter+1)%500 === 0 && this.state.counter !== 0) {
-        this.setState({
-          message: 'Congratulations! You won 250 points',
-          points: this.state.points + 250
-      });
-      } else if ((this.state.counter+1)%100 === 0 && this.state.counter !== 0) {
-        this.setState({
-          message: 'Congratulations! You won 40 points',
-        points: this.state.points + 40
-      });
-      } else if ((this.state.counter+1)%10 === 0 && this.state.counter !== 0) {
-        this.setState({
-          message: 'Congratulations! You won 5 points',
-        points: this.state.points + 5
-      });
-      } else {
-        this.setState({
-          message: 'Sorry! No win this time',
-        });
-      }
+      const playerName = this.state.username;
+
+      xhr.addEventListener('load', () => {
+        const responseData = JSON.parse(xhr.responseText)
+        if(!responseData.error){
+          this.setState({playerID: responseData.username})
+        } else {
+          this.setState({message:responseData.error})
+        }
+  
+      })
+  
+      xhr.open('POST', 'http://localhost:5000/api/players/', true)
+      xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+      xhr.send('username='+playerName)
+      
+    this.setState({
+      loggedIn: true
+    
+    })
+
     }
   }
+
+  setCounter = (counterScore) => {
+    const count10 = 10-counterScore%10;
+    const count100 = 100-counterScore%100;
+    const count500 = 500-counterScore%500;
+    if(count500 === count10) {
+      this.setState({counter: count10});
+    } else if (count10 === count100) {
+      this.setState({counter: count10});
+    } else {
+      this.setState({counter: count10});
+    }
+  }
+
+// Function to handle basic userside logic.
+  playGame = () => {
+    const pid = this.state.playerID;
+
+    xhr.addEventListener('load', () => {
+      const responseData = JSON.parse(xhr.responseText)
+      if(!responseData.error){
+      this.setCounter(responseData.counter);
+      this.setState({points: responseData.player.score})
+      } else {
+        this.setState({message:responseData.error})
+      }
+
+    })
+
+    xhr.open('POST', 'http://localhost:5000/api/player/', true)
+    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    xhr.send('id='+pid+'&score='+this.state.points)
+
+}
+
+
   render() {
+    const loggedIn = this.state.loggedIn;
+    if (loggedIn){
   return (
     <div className="App">
       <header className="App-header">
@@ -63,7 +93,7 @@ class App extends Component {
           Points: {this.state.points}
         </h1>
         <h1>
-          Counter: {this.state.counter}</h1>
+          To win: {this.state.counter}</h1>
         
         <Button variant="contained" color="secondary" onClick={this.playGame}>
           {this.state.game}
@@ -71,6 +101,18 @@ class App extends Component {
       </header>
     </div>
   );
+    } else {
+      return (
+        <div className="App">
+      <header className="App-header">
+        <form>
+          <input placeholder='Your Username' value={this.state.username} onChange={e => this.setState({username: e.target.value})} />
+          <button onClick={this.CUALI}>LEts roll</button>
+        </form>
+      </header>
+    </div>
+      )
+    }
   }
 }
 
