@@ -5,7 +5,7 @@ import './App.css';
 import Cookies from 'universal-cookie';
 
 const cookies = new Cookies()
-const serverUrl = 'http://localhost:5000/api';
+const serverUrl = 'https://painikepeli-backend.herokuapp.com/api';
 
 class App extends Component {
   constructor(props) {
