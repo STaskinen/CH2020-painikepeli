@@ -36,3 +36,7 @@
     transform: rotate(360deg);
   }
 }
+
+#username {
+  background-color: #c0c0c0;
+}
